@@ -1,0 +1,8 @@
+{
+  "name": "Robo AI - Setting Animator",
+  "description": "Search locations using Google Maps, composite yourself into them with Nano Banana, and animate the result with Veo.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
