@@ -1,4 +1,4 @@
-import { GoogleGenAI, Modality, VideoGenerationReferenceType } from "@google/genai";
+import { GoogleGenAI, VideoGenerationReferenceType } from "@google/genai";
 import { LocationResult } from "../types";
 
 // Helper to get AI client.
@@ -55,14 +55,13 @@ export const generateLocationImage = async (locationName: string): Promise<strin
           },
         ],
       },
-      config: {
-        responseModalities: [Modality.IMAGE],
-      },
     });
 
-    const part = response.candidates?.[0]?.content?.parts?.[0];
-    if (part && part.inlineData) {
-      return part.inlineData.data;
+    const parts = response.candidates?.[0]?.content?.parts || [];
+    for (const part of parts) {
+      if (part.inlineData && part.inlineData.data) {
+        return part.inlineData.data;
+      }
     }
     throw new Error("No image generated");
   } catch (error) {
@@ -109,14 +108,13 @@ export const compositeImages = async (
           },
         ],
       },
-      config: {
-        responseModalities: [Modality.IMAGE],
-      },
     });
 
-    const part = response.candidates?.[0]?.content?.parts?.[0];
-    if (part && part.inlineData) {
-      return part.inlineData.data;
+    const parts = response.candidates?.[0]?.content?.parts || [];
+    for (const part of parts) {
+      if (part.inlineData && part.inlineData.data) {
+        return part.inlineData.data;
+      }
     }
     throw new Error("No composite image generated");
   } catch (error) {
@@ -144,15 +142,21 @@ export const editImage = async (imageBase64: string, prompt: string): Promise<st
           },
         ],
       },
-      config: {
-        responseModalities: [Modality.IMAGE],
-      },
     });
 
-    const part = response.candidates?.[0]?.content?.parts?.[0];
-    if (part && part.inlineData) {
-      return part.inlineData.data;
+    const parts = response.candidates?.[0]?.content?.parts || [];
+    for (const part of parts) {
+      if (part.inlineData && part.inlineData.data) {
+        return part.inlineData.data;
+      }
     }
+    
+    // Log text response for debugging if no image found
+    const textPart = parts.find(p => p.text);
+    if (textPart) {
+        console.warn("Model returned text instead of image:", textPart.text);
+    }
+
     throw new Error("No edited image generated");
   } catch (error) {
     console.error("Edit Error:", error);

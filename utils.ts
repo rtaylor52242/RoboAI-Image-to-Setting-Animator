@@ -37,3 +37,63 @@ export const getMimeTypeFromUrl = (url: string): string => {
     if(url.startsWith('data:image/webp')) return 'image/webp';
     return 'image/png'; // default
 }
+
+export const downloadBase64 = (base64: string, filename: string) => {
+  const link = document.createElement('a');
+  link.href = `data:image/png;base64,${base64}`;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+export const mergeImages = async (
+  bgBase64: string,
+  fgBase64: string,
+  fgX: number, // 0-1 (percentage of width)
+  fgY: number, // 0-1 (percentage of height)
+  fgScale: number // multiplier
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const bgImg = new Image();
+    const fgImg = new Image();
+    
+    bgImg.onload = () => {
+      fgImg.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = bgImg.width;
+        canvas.height = bgImg.height;
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          reject(new Error("Could not get canvas context"));
+          return;
+        }
+
+        // Draw Background
+        ctx.drawImage(bgImg, 0, 0);
+
+        // Calculate FG dimensions preserving aspect ratio
+        const fgAspect = fgImg.width / fgImg.height;
+        // Base size: let's say 1.0 scale means 1/3 of background width
+        const baseWidth = bgImg.width * 0.33; 
+        const drawWidth = baseWidth * fgScale;
+        const drawHeight = drawWidth / fgAspect;
+
+        // Calculate Position (Center based)
+        const posX = (bgImg.width * fgX) - (drawWidth / 2);
+        const posY = (bgImg.height * fgY) - (drawHeight / 2);
+
+        // Draw Foreground
+        ctx.drawImage(fgImg, posX, posY, drawWidth, drawHeight);
+
+        // Export
+        const result = canvas.toDataURL('image/png');
+        resolve(result.split(',')[1]);
+      };
+      fgImg.src = `data:image/png;base64,${fgBase64}`;
+    };
+    bgImg.src = `data:image/png;base64,${bgBase64}`;
+    bgImg.onerror = reject;
+  });
+};
